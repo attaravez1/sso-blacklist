@@ -1,0 +1,29 @@
+name: OTP Loop
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Tor
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tor
+          sudo sed -i 's/#ControlPort 9051/ControlPort 9051/' /etc/tor/torrc
+          sudo sed -i 's/#CookieAuthentication 1/CookieAuthentication 0/' /etc/tor/torrc
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install -r requirements.txt
+
+      - name: Run OTP script (15 min timeout)
+        run: timeout 900 python otp.py || true
