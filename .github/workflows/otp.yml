@@ -21,6 +21,7 @@ jobs:
         with:
           python-version: '3.11'
 
+
       - run: pip install -r requirements.txt
 
       - name: Run OTP script (15 min timeout)
