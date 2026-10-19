@@ -5,7 +5,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # ============ USER INPUT — 已写死 ============
-email = "avezff8@gmail.com"   # ← 改成你要的邮箱
+email = "aashiqsiddiqui278@gmail.com"   # ← 改成你要的邮箱
 threads = 7                     # ← 固定 7
 use_tor = True                  # ← 走 Tor
 # ============================================
