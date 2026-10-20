@@ -4,11 +4,11 @@ from concurrent.futures import ThreadPoolExecutor
 import warnings
 warnings.filterwarnings('ignore')
 
-# ============ USER INPUT — 已写死 ============
-email = "aashiqsiddiqui278@gmail.com"   # ← 改成你要的邮箱
-threads = 7                     # ← 固定 7
-use_tor = True                  # ← 走 Tor
-# ============================================
+# ============ USER INPUT ============
+email = "aashiqsiddiqui278@gmail.com"
+threads = 7
+use_tor = True
+# ====================================
 
 checked = 0
 success_count = 0
@@ -18,7 +18,7 @@ lock = threading.Lock()
 request_lock = threading.Lock()
 last_request_time = 0
 last_rotate_time = 0
-ROTATE_COOLDOWN = 10            # 秒，两次 NEWNYM 之间至少隔 10 秒，避免 Tor 限速
+ROTATE_COOLDOWN = 10
 tor_process = None
 
 USER_AGENTS = [
@@ -30,10 +30,8 @@ USER_AGENTS = [
 
 # ---------- TOR ----------
 def start_tor_github_actions():
-    """GitHub Actions Ubuntu 环境：启动 tor 守护进程"""
     global tor_process
     try:
-        # 确保 ControlPort 开启
         torrc_add = "\nControlPort 9051\nCookieAuthentication 0\n"
         with open("/etc/tor/torrc", "a") as f:
             f.write(torrc_add)
@@ -46,7 +44,7 @@ def start_tor_github_actions():
             ['tor', '--SocksPort', '9050', '--ControlPort', '9051'],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
-        time.sleep(8)  # 等 Tor 连上网络
+        time.sleep(8)
         print("Tor started")
         return True
     except Exception as e:
@@ -54,7 +52,6 @@ def start_tor_github_actions():
         return False
 
 def rotate_tor_ip(thread_id):
-    """带冷却的 IP 轮换，每个线程不会无限刷 NEWNYM"""
     global last_rotate_time
     with lock:
         now = time.time()
@@ -62,7 +59,6 @@ def rotate_tor_ip(thread_id):
             return False
         last_rotate_time = now
 
-    # 方法 1: stem
     try:
         from stem import Signal
         from stem.control import Controller
@@ -75,7 +71,6 @@ def rotate_tor_ip(thread_id):
     except Exception:
         pass
 
-    # 方法 2: raw socket（无 stem 时的 fallback）
     try:
         import socket
         s = socket.socket()
@@ -129,7 +124,6 @@ def send_otp(thread_id):
     if not running:
         return True
 
-    # 每个线程发之前先检查是否该轮换
     if use_tor and thread_id % 2 == 0:
         rotate_tor_ip(thread_id)
 
@@ -146,12 +140,8 @@ def send_otp(thread_id):
     )
 
     try:
-        with request_lock:
-            now = time.time()
-            gap = now - last_request_time
-            if gap < 0.5:
-                time.sleep(0.5 - gap)
-            last_request_time = time.time()
+        # THIS IS THE CHANGE: Strict 5-second delay before every request
+        time.sleep(5)
 
         r = session.post(
             'https://sso.garena.com/api/send_register_code_email',
